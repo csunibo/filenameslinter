@@ -1,42 +1,69 @@
 package filenameslinter
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"os"
+	"path"
+	"regexp"
 
-    "github.com/csunibo/synta"
-    "github.com/csunibo/synta/regexp"
+	"github.com/csunibo/synta"
+	syntaRegexp "github.com/csunibo/synta/regexp"
 )
 
-func CheckFileName(synta synta.Synta, path string) (err error) {
-    file, err := os.Open(path)
-    if err != nil {
-        err = fmt.Errorf("File %s does not exists: %v", path, err)
-        return
-    }
+func CheckDir(synta synta.Synta, dirPath string) (err error) {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return
+	}
 
-    info, err := file.Stat()
-    if err != nil {
-        err = fmt.Errorf("Error while getting stats for file %s: %v", path, err)
-        return
-    }
+	for _, entry := range entries {
+		file, err := entry.Info()
+		if err != nil {
+			return err
+		}
 
-    if info.IsDir() {
-        fmt.Println("It's a directory")
-        // TODO handling for directory
-        return
-    }
+		if file.IsDir() {
+			if err := CheckFilePath(synta, file.Name()); err != nil {
+				dirPath = path.Join(dirPath, file.Name())
+				if err := CheckDir(synta, dirPath); err != nil {
+					return err
+				}
+			}
+		} else if err = CheckFilePath(synta, file.Name()); err != nil {
+			return err
+		}
+	}
 
-    reg, err := regexp.Convert(synta)
-    if err != nil {
-        err = fmt.Errorf("Can't convert synta to regexp, %v", err)
-    }
+	return
+}
 
-    if reg.Match([]byte(info.Name())) {
-        fmt.Println("Match ok")
-    } else {
-        err = fmt.Errorf("Regexp don't match, regexp: %s, filename: %s", reg.String(), info.Name())
-    }
+func CheckFilePath(synta synta.Synta, path string) (err error) {
+	file, err := os.Open(path)
 
-    return
+	if err != nil {
+		err = fmt.Errorf("file %s does not exists: %v", path, err)
+		return
+	}
+	defer file.Close()
+
+	info, err := file.Stat()
+	if err != nil {
+		err = fmt.Errorf("error while getting stats for file %s: %v", path, err)
+		return
+	}
+
+	reg, err := syntaRegexp.Convert(synta)
+	if err != nil {
+		err = fmt.Errorf("can't convert synta to regexp: %v", err)
+		return
+	}
+
+	if !reg.Match([]byte(info.Name())) {
+		err = RegexMatchError{
+			Regexp:   reg,
+			Filename: info.Name(),
+		}
+	}
+
+	return
 }

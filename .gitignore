@@ -18,3 +18,5 @@ cmd/cmd
 
 # Go workspace file
 go.work
+
+dir_test/*
