@@ -5,6 +5,7 @@ import (
     "os"
 
     "github.com/csunibo/synta"
+    "github.com/csunibo/synta/regexp"
 )
 
 func CheckFileName(synta synta.Synta, path string) (err error) {
@@ -22,6 +23,19 @@ func CheckFileName(synta synta.Synta, path string) (err error) {
 
     if info.IsDir() {
         fmt.Println("It's a directory")
+        // TODO handling for directory
+        return
+    }
+
+    reg, err := regexp.Convert(synta)
+    if err != nil {
+        err = fmt.Errorf("Can't convert synta to regexp, %v", err)
+    }
+
+    if reg.Match([]byte(info.Name())) {
+        fmt.Println("Match ok")
+    } else {
+        err = fmt.Errorf("Regexp don't match, regexp: %s, filename: %s", reg.String(), info.Name())
     }
 
     return
