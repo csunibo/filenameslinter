@@ -19,17 +19,18 @@ func CheckDir(synta synta.Synta, fs fs.ReadDirFS, dirPath string) (err error) {
 	for _, entry := range entries {
 		file, err := entry.Info()
 		if err != nil {
+            err = fmt.Errorf("Could not read directory: %v", err)
 			return err
 		}
 
 		if file.IsDir() {
-			if err := CheckName(synta, fs, file.Name()); err != nil {
+			if err := CheckName(synta, file.Name(), true); err != nil {
 				dirPath = path.Join(dirPath, file.Name())
 				if err := CheckDir(synta, fs, dirPath); err != nil {
 					return err
 				}
 			}
-		} else if err = CheckName(synta, fs, file.Name()); err != nil {
+		} else if err = CheckName(synta, file.Name(), false); err != nil {
 			return err
 		}
 	}
@@ -37,41 +38,26 @@ func CheckDir(synta synta.Synta, fs fs.ReadDirFS, dirPath string) (err error) {
 	return
 }
 
-func CheckName(synta synta.Synta, fs fs.FS, path string) (err error) {
-	file, err := fs.Open(path)
-
-	if err != nil {
-		err = fmt.Errorf("file %s does not exists: %v", path, err)
-		return
-	}
-	defer file.Close()
-
-	info, err := file.Stat()
-	if err != nil {
-		err = fmt.Errorf("error while getting stats for file %s: %v", path, err)
-		return
-	}
-
-
+func CheckName(synta synta.Synta, name string, isDir bool) (err error) {
     var reg *regexp.Regexp = nil
-    if info.IsDir() {
+    if isDir {
         reg, err = syntaRegexp.ConvertWithoutExtension(synta)
         if err != nil {
-            err = fmt.Errorf("can't convert synta to (dir) regexp: %v", err)
+            err = fmt.Errorf("Could not convert synta to (dir) regexp: %v", err)
             return
         }
     } else {
         reg, err = syntaRegexp.Convert(synta)
         if err != nil {
-            err = fmt.Errorf("can't convert synta to (file) regexp: %v", err)
+            err = fmt.Errorf("Could not convert synta to (file) regexp: %v", err)
             return
         }
     }
 
-	if !reg.Match([]byte(info.Name())) {
+	if !reg.Match([]byte(name)) {
 		err = RegexMatchError{
 			Regexp:   reg,
-			Filename: info.Name(),
+			Filename: name,
 		}
 	}
 

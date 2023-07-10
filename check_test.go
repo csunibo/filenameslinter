@@ -3,172 +3,63 @@ package filenameslinter
 import (
 	"testing"
 
-	"github.com/psanford/memfs"
-
+	"github.com/liamg/memoryfs"
 	"github.com/csunibo/synta"
-
 	"github.com/stretchr/testify/assert"
 )
 
 // Don't want to use storage for tests, so we use /tmp
 // but it's only linux compatible.
 
-var rootFS = memfs.New()
+var rootFS = memoryfs.New()
 
 var _ = rootFS.MkdirAll("dir1", 0777)
 var _ = rootFS.WriteFile("abc", []byte(""), 0777)
 var _ = rootFS.WriteFile("APPUNTI.md", []byte(""), 0777)
 var _ = rootFS.WriteFile("basic.txt", []byte(""), 0777)
-
-func TestBasicError(t *testing.T) {
-	synta := synta.MustSynta(`useless = a|b
-> useless.useless`)
-	err := CheckName(synta, rootFS, "abc")
-	assert.NotNil(t, err)
-}
+var _ = rootFS.MkdirAll("prove", 0777)
+var _ = rootFS.WriteFile("prove/basic123.txt", []byte(""), 0777)
+var _ = rootFS.MkdirAll("prove2", 0777)
+var _ = rootFS.WriteFile("prove2/a1a.txt", []byte(""), 0777)
+var _ = rootFS.MkdirAll("prove3", 0777)
+var _ = rootFS.WriteFile("prove3/basi___c123.txt", []byte(""), 0777)
+var _ = rootFS.WriteFile("prove3/pippo.txt", []byte(""), 0777)
 
 func TestDirEmpty(t *testing.T) {
 	synta := synta.MustSynta(`useless = a|dir1
 > useless.useless`)
-	err := CheckName(synta, rootFS, "dir1")
+	err := CheckDir(synta, rootFS, "dir1")
 	assert.Nil(t, err)
 }
 
-func TestFileBasicError(t *testing.T) {
-	input := `word = [a-z]+
+func TestDirOneFileCorrect(t *testing.T) {
+    input := `word = [a-zA-Z]+[0-9]*
 ext = pdf|txt|tex|md
 > word.ext`
-	synta := synta.MustSynta(input)
-	err := CheckName(synta, rootFS, "APPUNTI.md") // does not match
-	assert.NotNil(t, err)
+
+    synta := synta.MustSynta(input)
+    err := CheckDir(synta, rootFS, "prove")
+    assert.Nil(t, err)
 }
 
-func TestFileBasicNotMatch(t *testing.T) {
-	input := `word = [a-z]+
+func TestDirOneFileNotCorrect(t *testing.T) {
+    input := `word = [a-zA-Z]+[0-9]*
 ext = pdf|txt|tex|md
 > word.ext`
-	synta := synta.MustSynta(input)
-	err := CheckName(synta, rootFS, "test.md") // does not exist
-	assert.NotNil(t, err)
+
+    synta := synta.MustSynta(input)
+    err := CheckDir(synta, rootFS, "prove2")
+    assert.NotNil(t, err)
 }
 
-func TestFileBasicMatch(t *testing.T) {
-	input := `word = [a-z]+
-	ext = pdf|txt|tex|go
-	> word.ext`
+func TestDirFileCorrectAndNotCorrect(t *testing.T) {
+    input := `word = [a-zA-Z]+[0-9]*
+ext = pdf|txt|tex|md
+> word.ext`
 
-	synta := synta.MustSynta(input)
-	err := CheckName(synta, rootFS, "basic.txt") // exists, and maches
-	assert.Nil(t, err)
+    synta := synta.MustSynta(input)
+    err := CheckDir(synta, rootFS, "prove3")
+    assert.NotNil(t, err)
+    matchErr := err.(RegexMatchError)
+    assert.Equal(t, "basi___c123.txt", matchErr.Filename)
 }
-
-// // DOWN THERE WE TEST DIRECTORIES:
-//
-// // TODO: move this part of code to separate file, if needed in other tests.
-// func CreateForEach(setUp func(), tearDown func()) func(func()) {
-// 	return func(testFunc func()) {
-// 		setUp()
-// 		testFunc()
-// 		tearDown()
-// 	}
-// }
-//
-// var RunTest = CreateForEach(setUp, tearDown)
-//
-// func setUp() {
-// 	// create a directory structure
-// 	// 	- dir_test
-// 	// 		- file.txt
-// 	// 		- file.md
-// 	// 		- FILE.md
-// 	// 		- FILE2.md
-// 	// 		- file1.pdf
-// 	// 		- dir2
-// 	// 			- file3.txt
-// 	// 			- file.txt
-//
-// 	err := os.Mkdir(rootDir, os.ModePerm)
-// 	if err != nil {
-// 		panic(err)
-// 		// if the dir_test does not exist, we assume the dir structure is not created
-// 	}
-//
-// 	dir2 := filepath.Join(rootDir, "dir2")
-// 	os.Mkdir(dir2, os.ModePerm)
-//
-// 	dir3 := filepath.Join(rootDir, "dir3")
-// 	os.Mkdir(dir3, os.ModePerm)
-//
-// 	file1 := filepath.Join(rootDir, "file.txt")
-// 	os.Create(file1)
-//
-// 	file2 := filepath.Join(rootDir, "file.md")
-// 	os.Create(file2)
-//
-// 	file3 := filepath.Join(rootDir, "FILE.md")
-// 	os.Create(file3)
-//
-// 	file4 := filepath.Join(rootDir, "FILE2.md")
-// 	os.Create(file4)
-//
-// 	file5 := filepath.Join(rootDir, "file1.pdf")
-// 	os.Create(file5)
-//
-// 	file6 := filepath.Join(dir2, "file3.txt")
-// 	os.Create(file6)
-//
-// 	file7 := filepath.Join(dir2, "file.txt")
-// 	os.Create(file7)
-// }
-//
-// func tearDown() {
-// 	os.RemoveAll(rootDir)
-// }
-//
-// func TestDirBasicError(t *testing.T) {
-// 	RunTest(func() {
-// 		input := `word = [a-z]+
-// 		ext = pdf|txt|tex|go
-// 		> word.ext`
-//
-// 		synta := synta.MustSynta(input)
-// 		err := CheckFilePath(synta, rootDir)
-// 		assert.NotNil(t, err)
-// 	})
-// }
-//
-// func TestDirBasicMatch(t *testing.T) {
-// 	RunTest(func() {
-// 		input := `word = [a-zA-Z]+[0-9]*
-// 		ext = pdf|txt|tex|md
-// 		> word.ext`
-//
-// 		synta := synta.MustSynta(input)
-// 		err := CheckFilePath(synta, rootDir)
-// 		assert.Nil(t, err)
-// 	})
-// }
-//
-// func TestDirDeepError(t *testing.T) {
-// 	RunTest(func() {
-// 		input := `word = [a-z]+
-// 		ext = pdf|txt|tex|md
-// 		> word.ext`
-//
-// 		synta := synta.MustSynta(input)
-// 		err := CheckFilePath(synta, filepath.Join(rootDir, "dir2"))
-// 		assert.NotNil(t, err)
-// 	})
-// }
-//
-// func TestDirDeepMatch(t *testing.T) {
-// 	RunTest(func() {
-// 		input := `word = [a-z]+[3]?
-// 		ext = pdf|txt|tex|md
-// 		> word.ext`
-//
-// 		synta := synta.MustSynta(input)
-// 		err := CheckFilePath(synta, filepath.Join(rootDir, "dir2"))
-// 		assert.Nil(t, err)
-// 	})
-// }
