@@ -2,16 +2,16 @@ package filenameslinter
 
 import (
 	"fmt"
-	"os"
 	"path"
-	"regexp"
+    "io/fs"
+    "regexp"
 
 	"github.com/csunibo/synta"
 	syntaRegexp "github.com/csunibo/synta/regexp"
 )
 
-func CheckDir(synta synta.Synta, dirPath string) (err error) {
-	entries, err := os.ReadDir(dirPath)
+func CheckDir(synta synta.Synta, fs fs.ReadDirFS, dirPath string) (err error) {
+    entries, err := fs.ReadDir(dirPath)
 	if err != nil {
 		return
 	}
@@ -23,13 +23,13 @@ func CheckDir(synta synta.Synta, dirPath string) (err error) {
 		}
 
 		if file.IsDir() {
-			if err := CheckFilePath(synta, file.Name()); err != nil {
+			if err := CheckName(synta, fs, file.Name()); err != nil {
 				dirPath = path.Join(dirPath, file.Name())
-				if err := CheckDir(synta, dirPath); err != nil {
+				if err := CheckDir(synta, fs, dirPath); err != nil {
 					return err
 				}
 			}
-		} else if err = CheckFilePath(synta, file.Name()); err != nil {
+		} else if err = CheckName(synta, fs, file.Name()); err != nil {
 			return err
 		}
 	}
@@ -37,8 +37,8 @@ func CheckDir(synta synta.Synta, dirPath string) (err error) {
 	return
 }
 
-func CheckFilePath(synta synta.Synta, path string) (err error) {
-	file, err := os.Open(path)
+func CheckName(synta synta.Synta, fs fs.FS, path string) (err error) {
+	file, err := fs.Open(path)
 
 	if err != nil {
 		err = fmt.Errorf("file %s does not exists: %v", path, err)
@@ -52,11 +52,21 @@ func CheckFilePath(synta synta.Synta, path string) (err error) {
 		return
 	}
 
-	reg, err := syntaRegexp.Convert(synta)
-	if err != nil {
-		err = fmt.Errorf("can't convert synta to regexp: %v", err)
-		return
-	}
+
+    var reg *regexp.Regexp = nil
+    if info.IsDir() {
+        reg, err = syntaRegexp.ConvertWithoutExtension(synta)
+        if err != nil {
+            err = fmt.Errorf("can't convert synta to (dir) regexp: %v", err)
+            return
+        }
+    } else {
+        reg, err = syntaRegexp.Convert(synta)
+        if err != nil {
+            err = fmt.Errorf("can't convert synta to (file) regexp: %v", err)
+            return
+        }
+    }
 
 	if !reg.Match([]byte(info.Name())) {
 		err = RegexMatchError{
