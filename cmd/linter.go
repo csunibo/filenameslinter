@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/csunibo/synta"
+	"github.com/csunibo/filenameslinter"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	data, err := ioutil.ReadFile(flag.Arg(0))
+	data, err := os.ReadFile(flag.Arg(0))
 	if err != nil {
 		fmt.Printf("Could not read synta definition file: %v", err)
 		os.Exit(3)
@@ -31,8 +31,13 @@ func main() {
 		os.Exit(4)
 	}
 
-	// TODO: use the filenamelinter library to actually check the folder
-	fmt.Printf("%v %f\n", syntaFile, recursive)
+    pwd, err := os.Getwd()
+	if err != nil {
+        fmt.Printf("Could not get current working directory: %v", err)
+		os.Exit(5)
+	}
 
+	// TODO: use the filenamelinter library to actually check the folder
+   filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), flag.Arg(1))
 	os.Exit(0)
 }
