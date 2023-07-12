@@ -10,6 +10,8 @@ import (
 )
 
 func main() {
+	recursive := flag.Bool("recursive", true, "Recursively check all files")
+	kebab_case_dir := flag.Bool("kebab-case-dir", true, "Check if directory names are in kebab-case")
 	flag.Parse()
 
 	if len(flag.Args()) < 2 {
@@ -35,7 +37,7 @@ func main() {
 		os.Exit(5)
 	}
 
-	err = filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), flag.Arg(1))
+	err = filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), flag.Arg(1), *recursive, *kebab_case_dir)
 	if err != nil {
 		fmt.Printf("Error checking directory: %v", err)
 		os.Exit(6)

@@ -33,7 +33,7 @@ func CustomReadDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 	return list, err
 }
 
-func CheckDir(synta synta.Synta, fs fs.FS, dirPath string) (err error) {
+func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, kebab_dir bool) (err error) {
 	entries, err := CustomReadDir(fs, dirPath)
 	if err != nil {
 		return
@@ -47,9 +47,21 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string) (err error) {
 		}
 
 		if file.IsDir() {
-			if err := CheckName(synta, file.Name(), true); err != nil {
-				dirPath = path.Join(dirPath, file.Name())
-				if err := CheckDir(synta, fs, dirPath); err != nil {
+			kebab_regexp := regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*$")
+			if kebab_dir && !kebab_regexp.Match([]byte(file.Name())) {
+				err = fmt.Errorf("Directories need to be in kebab-case")
+				return err
+			}
+
+			if recursive {
+				if err := CheckName(synta, file.Name(), true); err != nil {
+					dirPath = path.Join(dirPath, file.Name())
+					if err := CheckDir(synta, fs, dirPath, recursive, kebab_dir); err != nil {
+						return err
+					}
+				}
+			} else {
+				if err := CheckName(synta, file.Name(), true); err != nil {
 					return err
 				}
 			}

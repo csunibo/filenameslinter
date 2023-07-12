@@ -38,7 +38,7 @@ var _ = rootFS.WriteFile("prove5/pro__asd/ANDREA.pdf", []byte(""), 0777)
 func TestDirEmpty(t *testing.T) {
 	synta := synta.MustSynta(`useless = a|dir1
 > useless.useless`)
-	err := CheckDir(synta, rootFS, "dir1")
+	err := CheckDir(synta, rootFS, "dir1", true, true)
 	assert.Nil(t, err)
 }
 
@@ -48,7 +48,7 @@ ext = pdf|txt|tex|md
 > word.ext`
 
 	synta := synta.MustSynta(input)
-	err := CheckDir(synta, rootFS, "prove")
+	err := CheckDir(synta, rootFS, "prove", true, true)
 	assert.Nil(t, err)
 }
 
@@ -58,7 +58,7 @@ ext = pdf|txt|tex|md
 > word.ext`
 
 	synta := synta.MustSynta(input)
-	err := CheckDir(synta, rootFS, "prove2")
+	err := CheckDir(synta, rootFS, "prove2", true, true)
 	assert.NotNil(t, err)
 }
 
@@ -68,28 +68,28 @@ ext = pdf|txt|tex|md
 > word.ext`
 
 	synta := synta.MustSynta(input)
-	err := CheckDir(synta, rootFS, "prove3")
+	err := CheckDir(synta, rootFS, "prove3", true, true)
 	assert.NotNil(t, err)
 	matchErr := err.(RegexMatchError)
 	assert.Equal(t, "basi___c123.txt", matchErr.Filename)
 }
 
-func TastDirRecursiveWithCorrectDirName(t *testing.T) {
+func TestDirRecursiveWithCorrectDirName(t *testing.T) {
 	input := `word = [a-zA-Z]+[0-9]*
 ext = pdf|txt|tex|md
 > word.ext`
 
 	synta := synta.MustSynta(input)
-	err := CheckDir(synta, rootFS, "prove4")
-	assert.NotNil(t, err)
+	err := CheckDir(synta, rootFS, "prove4", true, true)
+	assert.Nil(t, err)
 }
 
-func TastDirRecursiveWithNotCorrectDirName(t *testing.T) {
+func TestDirRecursiveWithNotCorrectDirName(t *testing.T) {
 	input := `word = [a-zA-Z]+[0-9]*
 ext = pdf|txt|tex|md
 > word.ext`
 
 	synta := synta.MustSynta(input)
-	err := CheckDir(synta, rootFS, "prove5")
+	err := CheckDir(synta, rootFS, "prove5", true, true)
 	assert.NotNil(t, err)
 }
