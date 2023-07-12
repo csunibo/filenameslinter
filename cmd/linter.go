@@ -10,8 +10,6 @@ import (
 )
 
 func main() {
-	recursive := flag.Bool("recurive", false, "Recursively check all files")
-
 	flag.Parse()
 
 	if len(flag.Args()) < 2 {
@@ -37,7 +35,10 @@ func main() {
 		os.Exit(5)
 	}
 
-	// TODO: use the filenamelinter library to actually check the folder
-   filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), flag.Arg(1))
+	err = filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), flag.Arg(1))
+  if err != nil {
+    fmt.Printf("Error checking directory: %v", err)
+    os.Exit(6)
+  }
 	os.Exit(0)
 }

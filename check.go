@@ -1,17 +1,40 @@
 package filenameslinter
 
 import (
+	"errors"
 	"fmt"
 	"path"
     "io/fs"
     "regexp"
+	"sort"
 
 	"github.com/csunibo/synta"
 	syntaRegexp "github.com/csunibo/synta/regexp"
 )
 
-func CheckDir(synta synta.Synta, fs fs.ReadDirFS, dirPath string) (err error) {
-    entries, err := fs.ReadDir(dirPath)
+func CustomReadDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
+	if fsys, ok := fsys.(fs.ReadDirFS); ok {
+		return fsys.ReadDir(name)
+	}
+
+	file, err := fsys.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	dir, ok := file.(fs.ReadDirFile)
+	if !ok {
+		return nil, &fs.PathError{Op: "readdir", Path: name, Err: errors.New("not implemented")}
+	}
+
+	list, err := dir.ReadDir(-1)
+	sort.Slice(list, func(i, j int) bool { return list[i].Name() < list[j].Name() })
+	return list, err
+}
+
+func CheckDir(synta synta.Synta, fs fs.FS, dirPath string) (err error) {
+	entries, err := CustomReadDir(fs, dirPath)
 	if err != nil {
 		return
 	}
