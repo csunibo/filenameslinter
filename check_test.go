@@ -3,8 +3,8 @@ package filenameslinter
 import (
 	"testing"
 
-	"github.com/liamg/memoryfs"
 	"github.com/csunibo/synta"
+	"github.com/liamg/memoryfs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,53 +43,53 @@ func TestDirEmpty(t *testing.T) {
 }
 
 func TestDirOneFileCorrect(t *testing.T) {
-    input := `word = [a-zA-Z]+[0-9]*
+	input := `word = [a-zA-Z]+[0-9]*
 ext = pdf|txt|tex|md
 > word.ext`
 
-    synta := synta.MustSynta(input)
-    err := CheckDir(synta, rootFS, "prove")
-    assert.Nil(t, err)
+	synta := synta.MustSynta(input)
+	err := CheckDir(synta, rootFS, "prove")
+	assert.Nil(t, err)
 }
 
 func TestDirOneFileNotCorrect(t *testing.T) {
-    input := `word = [a-zA-Z]+[0-9]*
+	input := `word = [a-zA-Z]+[0-9]*
 ext = pdf|txt|tex|md
 > word.ext`
 
-    synta := synta.MustSynta(input)
-    err := CheckDir(synta, rootFS, "prove2")
-    assert.NotNil(t, err)
+	synta := synta.MustSynta(input)
+	err := CheckDir(synta, rootFS, "prove2")
+	assert.NotNil(t, err)
 }
 
 func TestDirFileCorrectAndNotCorrect(t *testing.T) {
-    input := `word = [a-zA-Z]+[0-9]*
+	input := `word = [a-zA-Z]+[0-9]*
 ext = pdf|txt|tex|md
 > word.ext`
 
-    synta := synta.MustSynta(input)
-    err := CheckDir(synta, rootFS, "prove3")
-    assert.NotNil(t, err)
-    matchErr := err.(RegexMatchError)
-    assert.Equal(t, "basi___c123.txt", matchErr.Filename)
+	synta := synta.MustSynta(input)
+	err := CheckDir(synta, rootFS, "prove3")
+	assert.NotNil(t, err)
+	matchErr := err.(RegexMatchError)
+	assert.Equal(t, "basi___c123.txt", matchErr.Filename)
 }
 
 func TastDirRecursiveWithCorrectDirName(t *testing.T) {
-    input := `word = [a-zA-Z]+[0-9]*
+	input := `word = [a-zA-Z]+[0-9]*
 ext = pdf|txt|tex|md
 > word.ext`
 
-    synta := synta.MustSynta(input)
-    err := CheckDir(synta, rootFS, "prove4")
-    assert.NotNil(t, err)
+	synta := synta.MustSynta(input)
+	err := CheckDir(synta, rootFS, "prove4")
+	assert.NotNil(t, err)
 }
 
 func TastDirRecursiveWithNotCorrectDirName(t *testing.T) {
-    input := `word = [a-zA-Z]+[0-9]*
+	input := `word = [a-zA-Z]+[0-9]*
 ext = pdf|txt|tex|md
 > word.ext`
 
-    synta := synta.MustSynta(input)
-    err := CheckDir(synta, rootFS, "prove5")
-    assert.NotNil(t, err)
+	synta := synta.MustSynta(input)
+	err := CheckDir(synta, rootFS, "prove5")
+	assert.NotNil(t, err)
 }

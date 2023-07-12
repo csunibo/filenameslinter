@@ -3,9 +3,9 @@ package filenameslinter
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"path"
-    "io/fs"
-    "regexp"
+	"regexp"
 	"sort"
 
 	"github.com/csunibo/synta"
@@ -42,7 +42,7 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string) (err error) {
 	for _, entry := range entries {
 		file, err := entry.Info()
 		if err != nil {
-            err = fmt.Errorf("Could not read directory: %v", err)
+			err = fmt.Errorf("Could not read directory: %v", err)
 			return err
 		}
 
@@ -62,20 +62,20 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string) (err error) {
 }
 
 func CheckName(synta synta.Synta, name string, isDir bool) (err error) {
-    var reg *regexp.Regexp = nil
-    if isDir {
-        reg, err = syntaRegexp.ConvertWithoutExtension(synta)
-        if err != nil {
-            err = fmt.Errorf("Could not convert synta to (dir) regexp: %v", err)
-            return
-        }
-    } else {
-        reg, err = syntaRegexp.Convert(synta)
-        if err != nil {
-            err = fmt.Errorf("Could not convert synta to (file) regexp: %v", err)
-            return
-        }
-    }
+	var reg *regexp.Regexp = nil
+	if isDir {
+		reg, err = syntaRegexp.ConvertWithoutExtension(synta)
+		if err != nil {
+			err = fmt.Errorf("Could not convert synta to (dir) regexp: %v", err)
+			return
+		}
+	} else {
+		reg, err = syntaRegexp.Convert(synta)
+		if err != nil {
+			err = fmt.Errorf("Could not convert synta to (file) regexp: %v", err)
+			return
+		}
+	}
 
 	if !reg.Match([]byte(name)) {
 		err = RegexMatchError{

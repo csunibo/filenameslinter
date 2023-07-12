@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/csunibo/synta"
 	"github.com/csunibo/filenameslinter"
+	"github.com/csunibo/synta"
 )
 
 func main() {
@@ -29,16 +29,16 @@ func main() {
 		os.Exit(4)
 	}
 
-    pwd, err := os.Getwd()
+	pwd, err := os.Getwd()
 	if err != nil {
-        fmt.Printf("Could not get current working directory: %v", err)
+		fmt.Printf("Could not get current working directory: %v", err)
 		os.Exit(5)
 	}
 
 	err = filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), flag.Arg(1))
-  if err != nil {
-    fmt.Printf("Error checking directory: %v", err)
-    os.Exit(6)
-  }
+	if err != nil {
+		fmt.Printf("Error checking directory: %v", err)
+		os.Exit(6)
+	}
 	os.Exit(0)
 }
