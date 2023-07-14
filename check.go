@@ -65,7 +65,7 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensur
 			if recursive {
 				log.Info().Msg("Checking dir " + file.Name() + " recursively")
 				if err := CheckName(synta, file.Name(), true); err != nil {
-					dirPath = path.Join(dirPath, file.Name())
+					dirPath := path.Join(dirPath, file.Name())
 					if err := CheckDir(synta, fs, dirPath, recursive, ensureKebabCasing); err != nil {
 						return err
 					}
