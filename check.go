@@ -12,7 +12,10 @@ import (
 	syntaRegexp "github.com/csunibo/synta/regexp"
 )
 
-func CustomReadDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
+// readDir uses the `readDir` method if the filesystem implements
+// `fs.ReadDirFS`, otherwise opens the path and parses it using
+// the `ReadDirFile` interface.
+func readDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 	if fsys, ok := fsys.(fs.ReadDirFS); ok {
 		return fsys.ReadDir(name)
 	}
@@ -33,8 +36,10 @@ func CustomReadDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 	return list, err
 }
 
-func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, kebab_dir bool) (err error) {
-	entries, err := CustomReadDir(fs, dirPath)
+var kebab_regexp *regexp.Regexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*$")
+
+func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensureKebabCasing bool) (err error) {
+	entries, err := readDir(fs, dirPath)
 	if err != nil {
 		return
 	}
@@ -45,18 +50,16 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, kebab
 			err = fmt.Errorf("Could not read directory: %v", err)
 			return err
 		}
+		if ensureKebabCasing && !kebab_regexp.Match([]byte(file.Name())) {
+			err = fmt.Errorf("Directories and files need to be in kebab-case, `%s` is not in kebab-case", file.Name())
+			return err
+		}
 
 		if file.IsDir() {
-			kebab_regexp := regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*$")
-			if kebab_dir && !kebab_regexp.Match([]byte(file.Name())) {
-				err = fmt.Errorf("Directories need to be in kebab-case")
-				return err
-			}
-
 			if recursive {
 				if err := CheckName(synta, file.Name(), true); err != nil {
 					dirPath = path.Join(dirPath, file.Name())
-					if err := CheckDir(synta, fs, dirPath, recursive, kebab_dir); err != nil {
+					if err := CheckDir(synta, fs, dirPath, recursive, ensureKebabCasing); err != nil {
 						return err
 					}
 				}
