@@ -7,9 +7,12 @@ import (
 
 	"github.com/csunibo/filenameslinter"
 	"github.com/csunibo/synta"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	recursive := flag.Bool("recursive", true, "Recursively check all files")
 	ensureKebabCasing := flag.Bool("ensure-kebab-casing", true, "Check if directory names are in kebab-case")
 	flag.Parse()
@@ -21,19 +24,19 @@ func main() {
 
 	data, err := os.ReadFile(flag.Arg(0))
 	if err != nil {
-		fmt.Printf("Could not read synta definition file: %v\n", err)
+		log.Err(err).Msg("Could not read synta definition file")
 		os.Exit(3)
 	}
 
 	syntaFile, err := synta.ParseSynta(string(data))
 	if err != nil {
-		fmt.Printf("Invalid synta definiton file: %v\n", err)
+		log.Err(err).Msg("Invalid synta definiton file")
 		os.Exit(4)
 	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		fmt.Printf("Could not get current working directory: %v\n", err)
+		log.Err(err).Msg("Could not get current working directory")
 		os.Exit(5)
 	}
 
@@ -43,7 +46,7 @@ func main() {
 		if *recursive {
 			extra = "recursively "
 		}
-		fmt.Printf("Error while %schecking directory: %v\n", extra, err)
+		log.Err(err).Msg("Error while " + extra + "checking directory")
 		os.Exit(6)
 	}
 	os.Exit(0)

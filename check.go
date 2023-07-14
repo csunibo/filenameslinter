@@ -51,7 +51,7 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensur
 			err = fmt.Errorf("Could not read directory: %v", err)
 			return err
 		}
-		log.Info().Msg("Checking file/dir with name " + file.Name())
+		log.Info().Msg("Checking file/dir with name " + dirPath + "/" + file.Name())
 
 		if ensureKebabCasing && !kebabRegexp.Match([]byte(file.Name())) {
 			err = RegexMatchError{
