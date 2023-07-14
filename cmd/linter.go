@@ -39,7 +39,11 @@ func main() {
 
 	err = filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), flag.Arg(1), *recursive, *kebab_case_dir)
 	if err != nil {
-		fmt.Printf("Error checking directory: %v", err)
+    extra := ""
+    if recursive {
+      extra = "recursively "
+    }
+		fmt.Printf("Error while %schecking directory:\n%v", extra, err)
 		os.Exit(6)
 	}
 	os.Exit(0)
