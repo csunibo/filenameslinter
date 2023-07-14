@@ -36,7 +36,7 @@ func readDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 	return list, err
 }
 
-var kebab_regexp *regexp.Regexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*$")
+var kebabRegexp *regexp.Regexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*?(.[a-z0-9]+)$")
 
 func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensureKebabCasing bool) (err error) {
 	entries, err := readDir(fs, dirPath)
@@ -50,8 +50,11 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensur
 			err = fmt.Errorf("Could not read directory: %v", err)
 			return err
 		}
-		if ensureKebabCasing && !kebab_regexp.Match([]byte(file.Name())) {
-			err = fmt.Errorf("Directories and files need to be in kebab-case, `%s` is not in kebab-case", file.Name())
+		if ensureKebabCasing && !kebabRegexp.Match([]byte(file.Name())) {
+			err = RegexMatchError{
+				Regexp:   kebabRegexp,
+				Filename: file.Name(),
+			}
 			return err
 		}
 
