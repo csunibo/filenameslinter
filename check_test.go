@@ -34,6 +34,11 @@ var _ = rootFS.WriteFile("prove5/pro__asd/samu.txt", []byte(""), 0777)
 var _ = rootFS.WriteFile("prove5/pro__asd/luca.md", []byte(""), 0777)
 var _ = rootFS.WriteFile("prove5/pro__asd/fabio123.md", []byte(""), 0777)
 var _ = rootFS.WriteFile("prove5/pro__asd/ANDREA.pdf", []byte(""), 0777)
+var _ = rootFS.MkdirAll("prove6", 0777)
+var _ = rootFS.MkdirAll("prove6/cart-ella", 0777)
+var _ = rootFS.WriteFile("prove6/cart-ella/b.txt", []byte(""), 0777)
+var _ = rootFS.WriteFile("prove6/cart-ella/f.md", []byte(""), 0777)
+var _ = rootFS.WriteFile("prove6/cart-ella/x.pdf", []byte(""), 0777)
 
 func TestDirEmpty(t *testing.T) {
 	synta := synta.MustSynta(`useless = a|dir1
@@ -92,4 +97,14 @@ ext = pdf|txt|tex|md
 	synta := synta.MustSynta(input)
 	err := CheckDir(synta, rootFS, "prove5", true, true)
 	assert.NotNil(t, err)
+}
+
+func TestDirRecursiveWithNotCorrectButKebabDirName(t *testing.T) {
+	input := `word = [a-z]+[0-9]*
+ext = pdf|txt|tex|md
+> word.ext`
+
+	synta := synta.MustSynta(input)
+	err := CheckDir(synta, rootFS, "prove6", true, true)
+	assert.Nil(t, err)
 }
