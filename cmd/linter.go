@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/csunibo/filenameslinter"
 	"github.com/csunibo/synta"
@@ -40,7 +41,8 @@ func main() {
 		os.Exit(5)
 	}
 
-	err = filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), flag.Arg(1), *recursive, *ensureKebabCasing)
+	dirPath := path.Base(pwd + "/" + flag.Arg(1))
+	err = filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), dirPath, *recursive, *ensureKebabCasing)
 	if err != nil {
 		extra := ""
 		if *recursive {
