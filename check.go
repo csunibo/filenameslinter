@@ -10,6 +10,7 @@ import (
 
 	"github.com/csunibo/synta"
 	syntaRegexp "github.com/csunibo/synta/regexp"
+	"github.com/rs/zerolog/log"
 )
 
 // readDir uses the `readDir` method if the filesystem implements
@@ -50,6 +51,8 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensur
 			err = fmt.Errorf("Could not read directory: %v", err)
 			return err
 		}
+		log.Info().Msg("Checking file/dir with name " + file.Name())
+
 		if ensureKebabCasing && !kebabRegexp.Match([]byte(file.Name())) {
 			err = RegexMatchError{
 				Regexp:   kebabRegexp,
@@ -60,6 +63,7 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensur
 
 		if file.IsDir() {
 			if recursive {
+				log.Info().Msg("Checking dir " + file.Name() + " recursively")
 				if err := CheckName(synta, file.Name(), true); err != nil {
 					dirPath = path.Join(dirPath, file.Name())
 					if err := CheckDir(synta, fs, dirPath, recursive, ensureKebabCasing); err != nil {
