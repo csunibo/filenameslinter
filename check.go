@@ -20,7 +20,7 @@ type Options struct {
 	IgnoreDotfiles    bool
 }
 
-var kebabRegexp *regexp.Regexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+)?$")
+var kebabRegexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+)?$")
 
 // readDir uses the `readDir` method if the filesystem implements
 // `fs.ReadDirFS`, otherwise opens the path and parses it using
