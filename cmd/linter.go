@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/csunibo/filenameslinter"
 	"github.com/csunibo/synta"
@@ -18,8 +17,8 @@ func main() {
 	ensureKebabCasing := flag.Bool("ensure-kebab-casing", true, "Check if directory names are in kebab-case")
 	flag.Parse()
 
-	if len(flag.Args()) < 2 {
-		fmt.Printf("Usage: %s [file.synta] [folder]\n", os.Args[0])
+	if len(flag.Args()) < 1 {
+		fmt.Printf("Usage: %s [file.synta] [<folder>]\n", os.Args[0])
 		os.Exit(1)
 	}
 
@@ -41,7 +40,11 @@ func main() {
 		os.Exit(5)
 	}
 
-	dirPath := path.Base(pwd + "/" + flag.Arg(1))
+	dirPath := "."
+	if len(flag.Args()) > 1 {
+		dirPath = flag.Arg(1)
+	}
+
 	err = filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), dirPath, *recursive, *ensureKebabCasing)
 	if err != nil {
 		extra := ""

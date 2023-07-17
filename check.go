@@ -13,6 +13,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var kebabRegexp *regexp.Regexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+)?$")
+
 // readDir uses the `readDir` method if the filesystem implements
 // `fs.ReadDirFS`, otherwise opens the path and parses it using
 // the `ReadDirFile` interface.
@@ -37,8 +39,6 @@ func readDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 	return list, err
 }
 
-var kebabRegexp *regexp.Regexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*?(.[a-z0-9]+)$")
-
 func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensureKebabCasing bool) (err error) {
 	entries, err := readDir(fs, dirPath)
 	if err != nil {
@@ -51,31 +51,24 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensur
 			err = fmt.Errorf("Could not read directory: %v", err)
 			return err
 		}
-		log.Info().Msg("Checking file/dir with name " + dirPath + "/" + file.Name())
+		absPath := path.Join(dirPath, file.Name())
+		log.Info().Str("path", absPath).Msg("Checking path basename")
 
 		if ensureKebabCasing && !kebabRegexp.Match([]byte(file.Name())) {
 			err = RegexMatchError{
-				Regexp:   kebabRegexp,
+				Regexp:   kebabRegexp.String(),
 				Filename: file.Name(),
 			}
 			return err
 		}
 
-		if file.IsDir() {
-			if recursive {
-				log.Info().Msg("Checking dir " + file.Name() + " recursively")
-				if err := CheckName(synta, file.Name(), true); err != nil {
-					dirPath := path.Join(dirPath, file.Name())
-					if err := CheckDir(synta, fs, dirPath, recursive, ensureKebabCasing); err != nil {
-						return err
-					}
-				}
-			} else {
-				if err := CheckName(synta, file.Name(), true); err != nil {
-					return err
-				}
-			}
-		} else if err = CheckName(synta, file.Name(), false); err != nil {
+		err = CheckName(synta, file.Name(), file.IsDir())
+		if err != nil && file.IsDir() && recursive {
+			log.Info().Str("path", absPath).Msg("Checking dir recursively")
+			err = CheckDir(synta, fs, absPath, recursive, ensureKebabCasing)
+		}
+
+		if err != nil {
 			return err
 		}
 	}
@@ -101,7 +94,7 @@ func CheckName(synta synta.Synta, name string, isDir bool) (err error) {
 
 	if !reg.Match([]byte(name)) {
 		err = RegexMatchError{
-			Regexp:   reg,
+			Regexp:   reg.String(),
 			Filename: name,
 		}
 	}
