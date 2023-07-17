@@ -39,11 +39,17 @@ var _ = rootFS.MkdirAll("prove6/cart-ella", 0777)
 var _ = rootFS.WriteFile("prove6/cart-ella/b.txt", []byte(""), 0777)
 var _ = rootFS.WriteFile("prove6/cart-ella/f.md", []byte(""), 0777)
 var _ = rootFS.WriteFile("prove6/cart-ella/x.pdf", []byte(""), 0777)
+var _ = rootFS.MkdirAll("prove7", 0777)
+var _ = rootFS.MkdirAll("prove7/.test-dir!!", 0777)
+var _ = rootFS.WriteFile("prove7/.test-file!!", []byte(""), 0777)
+var _ = rootFS.MkdirAll("prove7/subdir", 0777)
+var _ = rootFS.MkdirAll("prove7/subdir/.test-dir!!", 0777)
+var _ = rootFS.WriteFile("prove7/subdir/.test-file!!", []byte(""), 0777)
 
 func TestDirEmpty(t *testing.T) {
 	synta := synta.MustSynta(`useless = a|dir1
 > useless.useless`)
-	err := CheckDir(synta, rootFS, "dir1", true, true)
+	err := CheckDir(synta, rootFS, "dir1", &Options{true, true, false})
 	assert.Nil(t, err)
 }
 
@@ -53,7 +59,7 @@ ext = pdf|txt|tex|md
 > word.ext`
 
 	synta := synta.MustSynta(input)
-	err := CheckDir(synta, rootFS, "prove", true, true)
+	err := CheckDir(synta, rootFS, "prove", &Options{true, true, false})
 	assert.Nil(t, err)
 }
 
@@ -63,7 +69,7 @@ ext = pdf|txt|tex|md
 > word.ext`
 
 	synta := synta.MustSynta(input)
-	err := CheckDir(synta, rootFS, "prove2", true, true)
+	err := CheckDir(synta, rootFS, "prove2", &Options{true, true, false})
 	assert.NotNil(t, err)
 }
 
@@ -73,7 +79,7 @@ ext = pdf|txt|tex|md
 > word.ext`
 
 	synta := synta.MustSynta(input)
-	err := CheckDir(synta, rootFS, "prove3", true, true)
+	err := CheckDir(synta, rootFS, "prove3", &Options{true, true, false})
 	assert.NotNil(t, err)
 	matchErr := err.(RegexMatchError)
 	assert.Equal(t, "basi___c123.txt", matchErr.Filename)
@@ -85,7 +91,7 @@ ext = pdf|txt|tex|md
 > word.ext`
 
 	synta := synta.MustSynta(input)
-	err := CheckDir(synta, rootFS, "prove4", true, true)
+	err := CheckDir(synta, rootFS, "prove4", &Options{true, true, false})
 	assert.Nil(t, err)
 }
 
@@ -95,7 +101,7 @@ ext = pdf|txt|tex|md
 > word.ext`
 
 	synta := synta.MustSynta(input)
-	err := CheckDir(synta, rootFS, "prove5", true, true)
+	err := CheckDir(synta, rootFS, "prove5", &Options{true, true, false})
 	assert.NotNil(t, err)
 }
 
@@ -105,6 +111,32 @@ ext = pdf|txt|tex|md
 > word.ext`
 
 	synta := synta.MustSynta(input)
-	err := CheckDir(synta, rootFS, "prove6", true, true)
+	err := CheckDir(synta, rootFS, "prove6", &Options{true, true, false})
 	assert.Nil(t, err)
+}
+
+func TestDirIgnoreDots(t *testing.T) {
+	input := `word = [a-z]+[0-9]*
+ext = pdf|txt|tex|md
+> word.ext`
+
+	synta := synta.MustSynta(input)
+	err := CheckDir(synta, rootFS, "prove7", &Options{false, true, true})
+	assert.Nil(t, err)
+	err = CheckDir(synta, rootFS, "prove7", &Options{false, true, false})
+	assert.NotNil(t, err)
+}
+
+func TestDirIgnoreDotsRecursive(t *testing.T) {
+	input := `word = [a-z]+[0-9]*
+ext = pdf|txt|tex|md
+> word.ext`
+
+	synta := synta.MustSynta(input)
+	err := CheckDir(synta, rootFS, "prove7", &Options{true, true, true})
+	assert.Nil(t, err)
+	err = CheckDir(synta, rootFS, "prove7", &Options{false, true, true})
+	assert.Nil(t, err)
+	err = CheckDir(synta, rootFS, "prove7", &Options{true, true, false})
+	assert.NotNil(t, err)
 }

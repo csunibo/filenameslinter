@@ -7,11 +7,18 @@ import (
 	"path"
 	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/csunibo/synta"
 	syntaRegexp "github.com/csunibo/synta/regexp"
 	"github.com/rs/zerolog/log"
 )
+
+type Options struct {
+	Recursive         bool
+	EnsureKebabCasing bool
+	IgnoreDotfiles    bool
+}
 
 var kebabRegexp *regexp.Regexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+)?$")
 
@@ -39,7 +46,9 @@ func readDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 	return list, err
 }
 
-func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensureKebabCasing bool) (err error) {
+func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, opts *Options) (err error) {
+	log.Info().Str("path", dirPath).Msg("Checking dir")
+
 	entries, err := readDir(fs, dirPath)
 	if err != nil {
 		return
@@ -52,9 +61,16 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensur
 			return err
 		}
 		absPath := path.Join(dirPath, file.Name())
-		log.Info().Str("path", absPath).Msg("Checking path basename")
+		shouldIgonre := opts.IgnoreDotfiles && strings.HasPrefix(file.Name(), ".")
+		log.Info().Str("path", absPath).Bool("ignored", shouldIgonre).Msg("Checking path basename")
 
-		if ensureKebabCasing && !kebabRegexp.Match([]byte(file.Name())) {
+		// 1. (optionally) ignore files that start with a '.'
+		if shouldIgonre {
+			continue
+		}
+
+		// 1. (optionally) force all files to use kebab casing
+		if opts.EnsureKebabCasing && !kebabRegexp.Match([]byte(file.Name())) {
 			err = RegexMatchError{
 				Regexp:   kebabRegexp.String(),
 				Filename: file.Name(),
@@ -62,10 +78,11 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, recursive bool, ensur
 			return err
 		}
 
+		// 3. Check the filename; if it's a directory and the name doesn't match,
+		// recursively check it.
 		err = CheckName(synta, file.Name(), file.IsDir())
-		if err != nil && file.IsDir() && recursive {
-			log.Info().Str("path", absPath).Msg("Checking dir recursively")
-			err = CheckDir(synta, fs, absPath, recursive, ensureKebabCasing)
+		if err != nil && file.IsDir() && opts.Recursive {
+			err = CheckDir(synta, fs, absPath, opts)
 		}
 
 		if err != nil {

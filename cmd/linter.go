@@ -15,6 +15,7 @@ func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	recursive := flag.Bool("recursive", true, "Recursively check all files")
 	ensureKebabCasing := flag.Bool("ensure-kebab-casing", true, "Check if directory names are in kebab-case")
+	ignoreDotfiles := flag.Bool("ignore-dotfiles", true, "Ignore files and folders that start with a dot")
 	flag.Parse()
 
 	if len(flag.Args()) < 1 {
@@ -45,7 +46,12 @@ func main() {
 		dirPath = flag.Arg(1)
 	}
 
-	err = filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), dirPath, *recursive, *ensureKebabCasing)
+	opts := filenameslinter.Options{
+		Recursive:         *recursive,
+		EnsureKebabCasing: *ensureKebabCasing,
+		IgnoreDotfiles:    *ignoreDotfiles,
+	}
+	err = filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), dirPath, &opts)
 	if err != nil {
 		extra := ""
 		if *recursive {
