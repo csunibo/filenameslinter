@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/csunibo/filenameslinter"
 	"github.com/csunibo/synta"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	log "golang.org/x/exp/slog"
+
+	"github.com/csunibo/filenameslinter"
 )
 
 func main() {
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
 	recursive := flag.Bool("recursive", true, "Recursively check all files")
 	ensureKebabCasing := flag.Bool("ensure-kebab-casing", true, "Check if directory names are in kebab-case")
 	ignoreDotfiles := flag.Bool("ignore-dotfiles", true, "Ignore files and folders that start with a dot")
@@ -25,19 +25,19 @@ func main() {
 
 	data, err := os.ReadFile(flag.Arg(0))
 	if err != nil {
-		log.Err(err).Msg("Could not read synta definition file")
+		log.Error("could not read synta definition file", "err", err)
 		os.Exit(3)
 	}
 
 	syntaFile, err := synta.ParseSynta(string(data))
 	if err != nil {
-		log.Err(err).Msg("Invalid synta definiton file")
+		log.Error("invalid synta definiton file", "err", err)
 		os.Exit(4)
 	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		log.Err(err).Msg("Could not get current working directory")
+		log.Error("Could not get current working directory", "err", err)
 		os.Exit(5)
 	}
 
@@ -57,7 +57,7 @@ func main() {
 		if *recursive {
 			extra = "recursively "
 		}
-		log.Err(err).Msg("Error while " + extra + "checking directory")
+		log.Error("Error while "+extra+"checking directory", "err", err)
 		os.Exit(6)
 	}
 	os.Exit(0)
