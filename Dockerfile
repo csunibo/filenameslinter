@@ -3,7 +3,7 @@ COPY . /build
 WORKDIR /build
 RUN go build -ldflags "-s -w" -o /build/filenameslinter
 
-FROM scratch
+FROM alpine
 COPY --from=go-builder /build/filenameslinter /usr/bin/filenameslinter
 
 ENTRYPOINT ["/usr/bin/filenameslinter"]
