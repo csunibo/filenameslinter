@@ -11,7 +11,7 @@ import (
 
 	"github.com/csunibo/synta"
 	syntaRegexp "github.com/csunibo/synta/regexp"
-	"github.com/rs/zerolog/log"
+	log "golang.org/x/exp/slog"
 )
 
 type Options struct {
@@ -48,7 +48,7 @@ func readDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 }
 
 func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, opts *Options) (err error) {
-	log.Info().Str("path", dirPath).Msg("Checking dir")
+	log.Info("checking dir", "path", dirPath)
 
 	entries, err := readDir(fs, dirPath)
 	if err != nil {
@@ -63,7 +63,7 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, opts *Options) (err e
 		}
 		absPath := path.Join(dirPath, file.Name())
 		shouldIgonre := opts.IgnoreDotfiles && strings.HasPrefix(file.Name(), ".")
-		log.Info().Str("path", absPath).Bool("ignored", shouldIgonre).Msg("Checking path basename")
+		log.Info("checking path basename", "path", absPath, "ignored", shouldIgonre)
 
 		// 1. (optionally) ignore files that start with a '.'
 		if shouldIgonre {
