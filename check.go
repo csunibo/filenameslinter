@@ -44,10 +44,6 @@ func readDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 	sort.Slice(list, func(i, j int) bool { return list[i].Name() < list[j].Name() })
 
 	err = file.Close()
-	if err != nil {
-		return nil, err
-	}
-
 	return list, err
 }
 
