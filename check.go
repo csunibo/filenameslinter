@@ -20,7 +20,7 @@ type Options struct {
 	IgnoreDotfiles    bool
 }
 
-var kebabRegexp *regexp.Regexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+)?$")
+var kebabRegexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+)?$")
 
 // readDir uses the `readDir` method if the filesystem implements
 // `fs.ReadDirFS`, otherwise opens the path and parses it using
@@ -34,7 +34,6 @@ func readDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
 
 	dir, ok := file.(fs.ReadDirFile)
 	if !ok {
@@ -43,6 +42,8 @@ func readDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 
 	list, err := dir.ReadDir(-1)
 	sort.Slice(list, func(i, j int) bool { return list[i].Name() < list[j].Name() })
+
+	err = file.Close()
 	return list, err
 }
 
