@@ -47,7 +47,7 @@ func readDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 	return list, err
 }
 
-func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, opts *Options) (err error) {
+func CheckDir(synta *synta.Synta, fs fs.FS, dirPath string, opts *Options) (err error) {
 	log.Info("checking dir", "path", dirPath)
 
 	entries, err := readDir(fs, dirPath)
@@ -70,7 +70,7 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, opts *Options) (err e
 			continue
 		}
 
-		// 1. (optionally) force all files to use kebab casing
+		// 2. (optionally) force all files to use kebab casing
 		if opts.EnsureKebabCasing && !kebabRegexp.Match([]byte(file.Name())) {
 			err = RegexMatchError{
 				Regexp:   kebabRegexp.String(),
@@ -79,10 +79,16 @@ func CheckDir(synta synta.Synta, fs fs.FS, dirPath string, opts *Options) (err e
 			return err
 		}
 
-		// 3. Check the filename; if it's a directory and the name doesn't match,
-		// recursively check it.
-		err = CheckName(synta, file.Name(), file.IsDir())
-		if err != nil && file.IsDir() && opts.Recursive {
+		// 3. If we have a synta definition, check the filename against it. Otherwise,
+		// only run recursive checks if it is a directory.
+		if synta != nil {
+			// 3a. Check the filename; if it's a directory and the name doesn't match,
+			// recursively check it.
+			err = CheckName(*synta, file.Name(), file.IsDir())
+			if err != nil && file.IsDir() && opts.Recursive {
+				err = CheckDir(synta, fs, absPath, opts)
+			}
+		} else if file.IsDir() && opts.Recursive {
 			err = CheckDir(synta, fs, absPath, opts)
 		}
 

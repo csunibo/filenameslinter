@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/csunibo/synta"
@@ -12,28 +11,11 @@ import (
 )
 
 func main() {
-
 	recursive := flag.Bool("recursive", true, "Recursively check all files")
 	ensureKebabCasing := flag.Bool("ensure-kebab-casing", true, "Check if directory names are in kebab-case")
 	ignoreDotfiles := flag.Bool("ignore-dotfiles", true, "Ignore files and folders that start with a dot")
+	syntaDefinition := flag.String("definition", "", "Synta definition file to check filenames against")
 	flag.Parse()
-
-	if len(flag.Args()) < 1 {
-		fmt.Printf("Usage: %s [file.synta] [<folder>]\n", os.Args[0])
-		os.Exit(1)
-	}
-
-	data, err := os.ReadFile(flag.Arg(0))
-	if err != nil {
-		log.Error("could not read synta definition file", "err", err)
-		os.Exit(3)
-	}
-
-	syntaFile, err := synta.ParseSynta(string(data))
-	if err != nil {
-		log.Error("invalid synta definiton file", "err", err)
-		os.Exit(4)
-	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -42,8 +24,23 @@ func main() {
 	}
 
 	dirPath := "."
-	if len(flag.Args()) > 1 {
-		dirPath = flag.Arg(1)
+	if len(flag.Args()) > 0 {
+		dirPath = flag.Arg(0)
+	}
+
+	var syntaFile *synta.Synta = nil
+	if *syntaDefinition != "" {
+		data, err := os.ReadFile(*syntaDefinition)
+		if err != nil {
+			log.Error("could not read synta definition file", "err", err)
+			os.Exit(3)
+		}
+		s, err := synta.ParseSynta(string(data))
+		if err != nil {
+			log.Error("invalid synta definiton file", "err", err)
+			os.Exit(4)
+		}
+		syntaFile = &s
 	}
 
 	opts := filenameslinter.Options{
