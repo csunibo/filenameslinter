@@ -1,5 +1,7 @@
 github.com/csunibo/synta v0.1.1 h1:zAX9mG2HwbmCGosVyNz6vydCy6ayHzV0t6B6gAR8g2I=
 github.com/csunibo/synta v0.1.1/go.mod h1:jT0+S6wQ3SXj4uEOq8Ht2OPbmHCx6qZaUPTPX+1KwTE=
+github.com/csunibo/synta v0.1.2 h1:47yJqPxa6sWP9/Pm43StlQwBHYjjv7sDhgdeqdu0t1g=
+github.com/csunibo/synta v0.1.2/go.mod h1:jT0+S6wQ3SXj4uEOq8Ht2OPbmHCx6qZaUPTPX+1KwTE=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/liamg/memoryfs v1.6.0 h1:jAFec2HI1PgMTem5gR7UT8zi9u4BfG5jorCRlLH06W8=
