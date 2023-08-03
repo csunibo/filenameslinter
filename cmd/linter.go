@@ -3,6 +3,9 @@ package main
 import (
 	"flag"
 	"os"
+	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/csunibo/synta"
 	log "golang.org/x/exp/slog"
@@ -19,13 +22,21 @@ func main() {
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		log.Error("Could not get current working directory", "err", err)
+		log.Error("could not get current working directory", "err", err)
 		os.Exit(5)
 	}
 
 	dirPath := "."
+	parent := pwd
 	if len(flag.Args()) > 0 {
-		dirPath = flag.Arg(0)
+		absDir := path.Join(pwd, flag.Arg(0))
+		parent = filepath.Dir(strings.TrimSuffix(absDir, string(os.PathSeparator)))
+		dirPath, err = filepath.Rel(parent, absDir)
+
+		if err != nil {
+			log.Error("could not make the path relative", "err", err)
+			os.Exit(6)
+		}
 	}
 
 	var syntaFile *synta.Synta = nil
@@ -48,13 +59,13 @@ func main() {
 		EnsureKebabCasing: *ensureKebabCasing,
 		IgnoreDotfiles:    *ignoreDotfiles,
 	}
-	err = filenameslinter.CheckDir(syntaFile, os.DirFS(pwd), dirPath, &opts)
+	err = filenameslinter.CheckDir(syntaFile, os.DirFS(parent), dirPath, &opts)
 	if err != nil {
 		extra := ""
 		if *recursive {
 			extra = "recursively "
 		}
-		log.Error("Error while "+extra+"checking directory", "err", err)
+		log.Error("error while "+extra+"checking directory", "err", err)
 		os.Exit(6)
 	}
 	os.Exit(0)
