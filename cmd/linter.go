@@ -23,7 +23,7 @@ func main() {
 	pwd, err := os.Getwd()
 	if err != nil {
 		log.Error("could not get current working directory", "err", err)
-		os.Exit(5)
+		os.Exit(1)
 	}
 
 	dirPath := "."
@@ -35,7 +35,7 @@ func main() {
 
 		if err != nil {
 			log.Error("could not make the path relative", "err", err)
-			os.Exit(7)
+			os.Exit(2)
 		}
 	}
 
@@ -62,7 +62,7 @@ func main() {
 	err = filenameslinter.CheckDir(syntaFile, os.DirFS(parent), dirPath, &opts)
 	if err != nil {
 		log.Error("error while checking directory", "recursive", *recursive, "err", err)
-		os.Exit(6)
+		os.Exit(5)
 	}
 	os.Exit(0)
 }
