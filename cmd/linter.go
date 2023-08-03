@@ -35,7 +35,7 @@ func main() {
 
 		if err != nil {
 			log.Error("could not make the path relative", "err", err)
-			os.Exit(6)
+			os.Exit(7)
 		}
 	}
 
@@ -61,11 +61,7 @@ func main() {
 	}
 	err = filenameslinter.CheckDir(syntaFile, os.DirFS(parent), dirPath, &opts)
 	if err != nil {
-		extra := ""
-		if *recursive {
-			extra = "recursively "
-		}
-		log.Error("error while "+extra+"checking directory", "err", err)
+		log.Error("error while checking directory", "recursive", *recursive, "err", err)
 		os.Exit(6)
 	}
 	os.Exit(0)
