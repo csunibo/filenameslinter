@@ -22,10 +22,10 @@ type Options struct {
 
 var kebabRegexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+)?$")
 
-// readDir uses the `readDir` method if the filesystem implements
+// ReadDir uses the `readDir` method if the filesystem implements
 // `fs.ReadDirFS`, otherwise opens the path and parses it using
 // the `ReadDirFile` interface.
-func readDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
+func ReadDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 	if fsys, ok := fsys.(fs.ReadDirFS); ok {
 		return fsys.ReadDir(name)
 	}
@@ -50,7 +50,7 @@ func readDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 func CheckDir(synta *synta.Synta, fs fs.FS, dirPath string, opts *Options) (err error) {
 	log.Info("checking dir", "path", dirPath)
 
-	entries, err := readDir(fs, dirPath)
+	entries, err := ReadDir(fs, dirPath)
 	if err != nil {
 		return
 	}

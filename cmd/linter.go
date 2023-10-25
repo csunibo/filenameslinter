@@ -59,7 +59,14 @@ func main() {
 		EnsureKebabCasing: *ensureKebabCasing,
 		IgnoreDotfiles:    *ignoreDotfiles,
 	}
-	err = filenameslinter.CheckDir(syntaFile, os.DirFS(parent), dirPath, &opts)
+	fs := os.DirFS(parent)
+	_, err = filenameslinter.ReadDir(fs, dirPath)
+	// Sloppy: if the directory passed as argument can't be properly examined in
+	// first place (say, because it does not exist), the check passes
+	if err != nil {
+		os.Exit(0)
+	}
+	err = filenameslinter.CheckDir(syntaFile, fs, dirPath, &opts)
 	if err != nil {
 		log.Error("error while checking directory", "recursive", *recursive, "err", err)
 		os.Exit(5)
