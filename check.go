@@ -11,13 +11,14 @@ import (
 
 	"github.com/csunibo/synta"
 	syntaRegexp "github.com/csunibo/synta/regexp"
-	log "golang.org/x/exp/slog"
+	log "log/slog"
 )
 
 type Options struct {
 	Recursive         bool
 	EnsureKebabCasing bool
 	IgnoreDotfiles    bool
+	FailFast          bool
 }
 
 var kebabRegexp = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+)?$")
@@ -47,19 +48,20 @@ func ReadDir(fsys fs.FS, name string) ([]fs.DirEntry, error) {
 	return list, err
 }
 
-func CheckDir(synta *synta.Synta, fs fs.FS, dirPath string, opts *Options) (err error) {
+func CheckDir(synta *synta.Synta, fs fs.FS, dirPath string, opts *Options) []error {
 	log.Info("checking dir", "path", dirPath)
+
+	errors := make([]error, 0)
 
 	entries, err := ReadDir(fs, dirPath)
 	if err != nil {
-		return
+		return []error{fmt.Errorf("Could not read directory: %v", err)}
 	}
 
 	for _, entry := range entries {
 		file, err := entry.Info()
 		if err != nil {
-			err = fmt.Errorf("Could not read directory: %v", err)
-			return err
+			return []error{fmt.Errorf("could not read directory: %v", err)}
 		}
 		absPath := path.Join(dirPath, file.Name())
 		shouldIgonre := opts.IgnoreDotfiles && strings.HasPrefix(file.Name(), ".")
@@ -75,8 +77,12 @@ func CheckDir(synta *synta.Synta, fs fs.FS, dirPath string, opts *Options) (err 
 			err = RegexMatchError{
 				Regexp:   kebabRegexp.String(),
 				Filename: file.Name(),
+				Path:     absPath,
 			}
-			return err
+			errors = append(errors, err)
+			if opts.FailFast {
+				return errors
+			}
 		}
 
 		// 3. If we have a synta definition, check the filename against it. Otherwise,
@@ -86,18 +92,26 @@ func CheckDir(synta *synta.Synta, fs fs.FS, dirPath string, opts *Options) (err 
 			// recursively check it.
 			err = CheckName(*synta, file.Name(), file.IsDir())
 			if err != nil && file.IsDir() && opts.Recursive {
-				err = CheckDir(synta, fs, absPath, opts)
+				errors = append(errors, CheckDir(synta, fs, absPath, opts)...)
+				if opts.FailFast && len(errors) > 0 {
+					return errors
+				}
+			} else if err != nil {
+				errors = append(errors, err)
+				if opts.FailFast {
+					return errors
+				}
 			}
-		} else if file.IsDir() && opts.Recursive {
-			err = CheckDir(synta, fs, absPath, opts)
-		}
 
-		if err != nil {
-			return err
+		} else if file.IsDir() && opts.Recursive {
+			errors = append(errors, CheckDir(synta, fs, absPath, opts)...)
+			if opts.FailFast && len(errors) > 0 {
+				return errors
+			}
 		}
 	}
 
-	return
+	return errors
 }
 
 func CheckName(synta synta.Synta, name string, isDir bool) (err error) {
