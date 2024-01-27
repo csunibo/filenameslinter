@@ -6,7 +6,6 @@ require (
 	github.com/csunibo/synta v0.1.2
 	github.com/liamg/memoryfs v1.6.0
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 )
 
 require (

@@ -2,13 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
+
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/csunibo/synta"
-	log "golang.org/x/exp/slog"
+	log "log/slog"
 
 	"github.com/csunibo/filenameslinter"
 )
@@ -18,7 +20,14 @@ func main() {
 	ensureKebabCasing := flag.Bool("ensure-kebab-casing", true, "Check if directory names are in kebab-case")
 	ignoreDotfiles := flag.Bool("ignore-dotfiles", true, "Ignore files and folders that start with a dot")
 	syntaDefinition := flag.String("definition", "", "Synta definition file to check filenames against")
+	failFast := flag.Bool("failfast", false, "Stop checking as soon as an error is found")
 	flag.Parse()
+
+	githubActions := false
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		githubActions = true
+		log.Info("running in github actions")
+	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -54,11 +63,6 @@ func main() {
 		syntaFile = &s
 	}
 
-	opts := filenameslinter.Options{
-		Recursive:         *recursive,
-		EnsureKebabCasing: *ensureKebabCasing,
-		IgnoreDotfiles:    *ignoreDotfiles,
-	}
 	fs := os.DirFS(parent)
 	_, err = filenameslinter.ReadDir(fs, dirPath)
 	// Sloppy: if the directory passed as argument can't be properly examined in
@@ -66,10 +70,25 @@ func main() {
 	if err != nil {
 		os.Exit(0)
 	}
-	err = filenameslinter.CheckDir(syntaFile, fs, dirPath, &opts)
-	if err != nil {
-		log.Error("error while checking directory", "recursive", *recursive, "err", err)
+
+	opts := filenameslinter.Options{
+		Recursive:         *recursive,
+		EnsureKebabCasing: *ensureKebabCasing,
+		IgnoreDotfiles:    *ignoreDotfiles,
+		FailFast:          *failFast,
+	}
+	errs := filenameslinter.CheckDir(syntaFile, fs, dirPath, &opts)
+	if len(errs) > 0 {
+		log.Error("error while checking directory", "path", dirPath, "errors", len(errs))
+		for _, e := range errs {
+			log.Error("found error", "err", e)
+
+			if regexErr, ok := e.(filenameslinter.RegexMatchError); ok && githubActions {
+				fmt.Printf("::error file=%s::%s\n", path.Join(pwd, regexErr.Path), e.Error())
+			}
+		}
 		os.Exit(5)
 	}
+
 	os.Exit(0)
 }

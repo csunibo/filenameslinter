@@ -7,6 +7,7 @@ import (
 type RegexMatchError struct {
 	Regexp   string
 	Filename string
+	Path     string
 }
 
 func (e RegexMatchError) Error() string {
